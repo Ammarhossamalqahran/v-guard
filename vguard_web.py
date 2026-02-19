@@ -6,6 +6,8 @@ import datetime
 import io
 import re
 import pandas as pd
+import ssl
+import OpenSSL
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from urllib.parse import urlparse
@@ -26,7 +28,7 @@ def generate_pdf(domain, data):
     c.line(50, 720, 550, 720)
     y = 680
     for k, v in data.items():
-        if y < 100:  # لو قربنا من نهاية الصفحة
+        if y < 100:
             c.showPage()
             y = 750
         c.drawString(70, y, f"• {k}: {v}")
@@ -35,34 +37,24 @@ def generate_pdf(domain, data):
     buffer.seek(0)
     return buffer
 
-# --- CSS للبابلز ---
-st.markdown("""
-    <style>
-    .bubble {
-        display: inline-block;
-        padding: 20px;
-        margin: 10px;
-        border-radius: 50%;
-        background: #1f77b4;
-        color: white;
-        text-align: center;
-        transition: 0.3s;
-        cursor: pointer;
-        box-shadow: 0 0 10px rgba(0,0,0,0.3);
-        font-weight: bold;
-    }
-    .bubble:hover {
-        background: #ff7f0e;
-        box-shadow: 0 0 20px #ff7f0e;
-        transform: scale(1.1);
-    }
-    </style>
-""", unsafe_allow_html=True)
+# --- فحص SSL ---
+def check_ssl(domain):
+    try:
+        cert = ssl.get_server_certificate((domain, 443))
+        x509 = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, cert)
+        return {
+            "Issuer": x509.get_issuer().CN,
+            "Valid From": x509.get_notBefore().decode(),
+            "Valid Until": x509.get_notAfter().decode(),
+            "Version": x509.get_version(),
+            "Serial Number": x509.get_serial_number()
+        }
+    except Exception as e:
+        return {"Error": str(e)}
 
 # --- واجهة المستخدم ---
 st.title("🛡️ V-GUARD INTELLIGENCE SYSTEM")
-
-tabs = st.tabs(["🔍 Intelligence Hub", "📱 Social Media", "🔑 Pass Lab", "💬 Contact"])
+tabs = st.tabs(["🔍 Intelligence Hub", "📱 Social Media", "🔑 Pass Lab", "🕵️ Dark Web", "💬 Contact"])
 
 # ================= 1. INTELLIGENCE HUB =================
 with tabs[0]:
@@ -71,7 +63,6 @@ with tabs[0]:
     
     if st.button("EXECUTE SCAN 🚀", type="primary"):
         if target:
-            # استخراج الدومين بشكل آمن
             if "@" in target:
                 domain = target.split("@")[-1]
             else:
@@ -85,7 +76,6 @@ with tabs[0]:
                 geo = {}
                 ip = "0.0.0.0"
 
-            # فحص تقني
             score = 20
             spf = "❌ Missing"
             try:
@@ -94,7 +84,6 @@ with tabs[0]:
             except:
                 pass
 
-            # العرض
             c1, c2 = st.columns([1, 2])
             with c1:
                 st.metric("SECURITY SCORE", f"{score}/100")
@@ -111,6 +100,11 @@ with tabs[0]:
             
             pdf = generate_pdf(domain, tech_data)
             st.download_button("📄 DOWNLOAD FULL REPORT", pdf, file_name=f"VGuard_{domain}.pdf")
+
+            st.markdown("### 🔐 SSL Research")
+            ssl_data = check_ssl(domain)
+            st.json(ssl_data)
+
         else:
             st.warning("Please enter a target first!")
 
@@ -144,8 +138,17 @@ with tabs[2]:
         col_b.write("Numbers: " + ("✅" if has_num else "❌"))
         col_c.write("Symbols: " + ("✅" if has_sym else "❌"))
 
-# ================= 4. CONTACT =================
+# ================= 4. DARK WEB =================
 with tabs[3]:
+    st.header("🕵️ Dark Web Intelligence")
+    st.info("Checking leaked credentials & breaches...")
+    email_check = st.text_input("Enter Email to Check Breaches")
+    if email_check:
+        st.warning("⚠️ Demo Mode: Connect to HaveIBeenPwned API for real results.")
+        st.write(f"Results for {email_check}: Potential leaks found in demo mode.")
+
+# ================= 5. CONTACT =================
+with tabs[4]:
     st.header("💬 Connect with V-Guard")
     st.write("24/7 Professional Emergency Response.")
     st.link_button("Chat on WhatsApp 💬", f"https://wa.me/{MY_WHATSAPP}", type="primary")
