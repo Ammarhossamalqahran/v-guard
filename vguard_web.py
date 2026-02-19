@@ -10,114 +10,132 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from urllib.parse import urlparse
 
-# --- CONFIG ---
-st.set_page_config(page_title="V-GUARD | OSINT Intel", page_icon="🛡️", layout="wide")
+# --- الإعدادات الأساسية ---
+st.set_page_config(page_title="V-GUARD | Global Intel", page_icon="🛡️", layout="wide")
 MY_WHATSAPP = "201102353779"
 
-# --- OSINT FUNCTIONS ---
-def get_advanced_intel(domain):
-    intel = {}
+# --- دوال جلب البيانات ---
+def get_detailed_intel(domain):
     try:
-        # 1. Geolocation & IP
         ip = socket.gethostbyname(domain)
         res = requests.get(f"http://ip-api.com/json/{ip}", timeout=5).json()
-        intel.update({
-            "ip": ip, "city": res.get('city'), "country": res.get('country'),
-            "isp": res.get('isp'), "lat": res.get('lat'), "lon": res.get('lon')
-        })
-        
-        # 2. MX Records (Mail Servers)
-        mx_records = dns.resolver.resolve(domain, 'MX')
-        intel['mail_servers'] = [str(r.exchange) for r in mx_records]
-        
-        # 3. Subdomains (Common Check)
-        common_subs = ['www', 'mail', 'api', 'dev', 'staging', 'webmail']
-        found_subs = []
-        for sub in common_subs:
-            try:
-                socket.gethostbyname(f"{sub}.{domain}")
-                found_subs.append(f"{sub}.{domain}")
-            except: pass
-        intel['subdomains'] = found_subs
-        
-    except: pass
-    return intel
+        return res
+    except:
+        return None
 
-def create_pdf(domain, results):
+def create_pro_pdf(domain, results):
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=letter)
-    c.setFont("Helvetica-Bold", 20)
+    c.setFont("Helvetica-Bold", 25)
+    c.setStrokeColorRGB(0, 0.7, 0)
     c.drawString(50, 750, "V-GUARD DEEP INTELLIGENCE REPORT")
     c.setFont("Helvetica", 10)
-    c.drawString(50, 735, f"Target: {domain} | Generated: {datetime.datetime.now()}")
+    c.drawString(50, 735, f"Security Audit for: {domain} | Generated: {datetime.datetime.now()}")
     c.line(50, 725, 550, 725)
     
-    y = 700
-    for section, data in results.items():
+    y = 680
+    for key, val in results.items():
         c.setFont("Helvetica-Bold", 12)
-        c.drawString(50, y, f"[{section}]")
-        c.setFont("Helvetica", 10)
-        y -= 20
-        c.drawString(70, y, str(data))
+        c.drawString(70, y, f"[{key}]")
+        c.setFont("Helvetica", 12)
+        c.drawString(180, y, f"{val}")
         y -= 30
+    
     c.save()
     buffer.seek(0)
     return buffer
 
-# --- UI ---
-st.title("🛡️ V-GUARD | DEEP INTEL")
-tab1, tab2, tab3 = st.tabs(["🔍 Deep Audit", "🔑 Password Lab", "💬 Support"])
+# --- واجهة المستخدم ---
+st.title("🛡️ V-GUARD INTELLIGENCE SYSTEM")
+st.markdown("---")
+
+tab1, tab2, tab3 = st.tabs(["📊 Full Audit Dashboard", "🔐 Password Lab", "📞 Contact"])
 
 with tab1:
-    target = st.text_input("Enter Target", placeholder="example.com")
-    if st.button("RUN DEEP SCAN 🚀", type="primary"):
+    target = st.text_input("Enter URL or Email to Inspect", placeholder="example.com")
+    
+    if st.button("EXECUTE DEEP SCAN 🚀", type="primary"):
         if target:
+            # استخراج الدومين
             domain = urlparse(target).netloc if "://" in target else target.split("@")[-1] if "@" in target else target
-            with st.spinner("Expanding Research..."):
-                intel = get_advanced_intel(domain)
+            
+            with st.spinner("Analyzing Global Infrastructure..."):
+                intel = get_detailed_intel(domain)
                 
-                # Layout
-                c1, c2 = st.columns([1, 2])
-                with c1:
-                    st.header("🌐 Core Intel")
-                    st.metric("Target IP", intel.get('ip', 'N/A'))
-                    st.write(f"**ISP:** {intel.get('isp')}")
-                    st.write(f"**Location:** {intel.get('city')}, {intel.get('country')}")
-                    
-                    st.subheader("📬 Mail Infrastructure")
-                    for srv in intel.get('mail_servers', []):
-                        st.caption(f"MX: {srv}")
+                # فحص DNS و SSL
+                score = 0
+                spf = "❌ Missing"
+                try:
+                    if any("v=spf1" in r.to_text() for r in dns.resolver.resolve(domain, 'TXT')):
+                        spf = "✅ Protected"; score += 30
+                except: pass
+                
+                dmarc = "❌ Missing"
+                try:
+                    dns.resolver.resolve(f"_dmarc.{domain}", 'TXT')
+                    dmarc = "✅ Active"; score += 30
+                except: pass
+                
+                ssl_val = "❌ Not Secure"
+                try:
+                    ssl.create_default_context().wrap_socket(socket.socket(), server_hostname=domain).connect((domain, 443))
+                    ssl_val = "✅ Encrypted"; score += 40
+                except: pass
 
-                with c2:
-                    st.header("📍 Server Map")
-                    if intel.get('lat'):
-                        st.map(pd.DataFrame({'lat': [intel['lat']], 'lon': [intel['lon']]}))
+                # --- العرض الرئيسي (Score + Map) ---
+                col_left, col_right = st.columns([1, 2])
+                
+                with col_left:
+                    st.subheader("Security Score")
+                    color = "red" if score < 50 else "orange" if score < 80 else "green"
+                    st.markdown(f"<h1 style='text-align: center; color: {color};'>{score}/100</h1>", unsafe_allow_html=True)
+                    
+                    if intel:
+                        st.info(f"**IP:** {intel.get('query')}")
+                        st.info(f"**ISP:** {intel.get('isp')}")
+                        st.info(f"**Org:** {intel.get('org')}")
+                        st.info(f"**Location:** {intel.get('city')}, {intel.get('country')}")
+                
+                with col_right:
+                    st.subheader("Server Geolocation")
+                    if intel and intel.get('lat'):
+                        df = pd.DataFrame({'lat': [intel['lat']], 'lon': [intel['lon']]})
+                        st.map(df, zoom=3)
 
                 st.markdown("---")
                 
-                # Advanced Sections
-                col_a, col_b = st.columns(2)
-                with col_a:
-                    st.subheader("📂 Discovered Subdomains")
-                    if intel.get('subdomains'):
-                        st.success(f"Found {len(intel['subdomains'])} subdomains")
-                        for s in intel['subdomains']: st.code(s)
-                    else: st.warning("No common subdomains found.")
+                # --- عرض البيانات التقنية (اللي كانت ناقصة) ---
+                st.subheader("🛠️ Technical Deep Dive")
+                c1, c2, c3 = st.columns(3)
+                
+                with c1:
+                    st.markdown("### DNS Security")
+                    st.write(f"**SPF Record:** {spf}")
+                    st.write(f"**DMARC Policy:** {dmarc}")
+                    
+                with c2:
+                    st.markdown("### Encryption")
+                    st.write(f"**SSL Status:** {ssl_val}")
+                    st.write("**HTTPS:** Forced" if score > 70 else "**HTTPS:** Optional")
 
-                with col_b:
-                    st.subheader("⚡ Security Score")
-                    # فحص SPF/DMARC سريع للسكور
-                    score = 0
-                    try: 
-                        dns.resolver.resolve(domain, 'TXT')
-                        score += 50
-                    except: pass
-                    st.progress(score/100)
-                    st.write(f"Security Rating: {score}%")
+                with c3:
+                    st.markdown("### Infrastructure")
+                    st.write(f"**ASN:** {intel.get('as') if intel else 'N/A'}")
+                    st.write(f"**Timezone:** {intel.get('timezone') if intel else 'N/A'}")
 
-                # PDF
-                pdf = create_pdf(domain, {"IP": intel.get('ip'), "ISP": intel.get('isp'), "Subdomains": intel.get('subdomains')})
-                st.download_button("📄 Download Deep Report", pdf, file_name=f"VGuard_Deep_{domain}.pdf")
+                # --- زر تحميل التقرير الشامل ---
+                report_data = {
+                    "Total Score": f"{score}/100",
+                    "SPF Status": spf,
+                    "DMARC Status": dmarc,
+                    "SSL Status": ssl_val,
+                    "Server IP": intel.get('query') if intel else "Unknown",
+                    "ISP": intel.get('isp') if intel else "Unknown",
+                    "Location": f"{intel.get('city')}, {intel.get('country')}" if intel else "Unknown"
+                }
+                pdf = create_pro_pdf(domain, report_data)
+                st.download_button("📄 DOWNLOAD FULL PDF REPORT", pdf, file_name=f"VGuard_{domain}.pdf")
 
 with tab3:
+    st.header("V-Guard Emergency Support")
     st.link_button("Chat on WhatsApp 💬", f"https://wa.me/{MY_WHATSAPP}")
