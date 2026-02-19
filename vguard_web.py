@@ -53,22 +53,25 @@ def check_ssl(domain):
     except Exception as e:
         return {"Error": str(e)}
 
-# --- CSS للفقاعات ---
+# --- CSS للفقاعات (Glassmorphism style) ---
 st.markdown("""
     <style>
+    body {
+        background: linear-gradient(135deg, #dbe6f6, #c5796d);
+    }
     .bubble {
         background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(10px);
-        border-radius: 20px;
-        padding: 20px;
-        margin: 15px 0;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        backdrop-filter: blur(12px);
+        border-radius: 25px;
+        padding: 25px;
+        margin: 20px 0;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         transition: 0.3s;
     }
     .bubble:hover {
         background: rgba(255, 255, 255, 0.3);
-        box-shadow: 0 0 20px #4CAF50;
-        transform: scale(1.02);
+        box-shadow: 0 0 25px #4CAF50;
+        transform: scale(1.03);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -133,7 +136,7 @@ with tabs[0]:
                 "Category": ["SPF", "SSL", "Score"],
                 "Value": [1 if spf == "✅ Secured" else 0, 1 if "Issuer" in ssl_data else 0, score/100]
             })
-            fig = px.pie(df, names="Category", values="Value", title="Security Indicators")
+            fig = px.pie(df, names="Category", values="Value", title="Security Indicators", color_discrete_sequence=px.colors.sequential.Aggrnyl)
             st.plotly_chart(fig, use_container_width=True)
 
         else:
@@ -190,6 +193,4 @@ with tabs[4]:
     st.markdown('<div class="bubble">', unsafe_allow_html=True)
     st.header("💬 Connect with V-Guard")
     st.write("24/7 Professional Emergency Response.")
-    st.link_button("Chat on WhatsApp 💬", f"https://wa.me/{MY_WHATSAPP}", type="primary")
-    st.write(f"Direct Email: {MY_EMAIL}")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.link_button("Chat on WhatsApp 💬", f"https://wa.me/{MY
