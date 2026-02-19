@@ -1,7 +1,6 @@
 streamlit
 dnspython
 requests
-reportlab
 pandas
-beautifulsoup4
-python-whois
+reportlab
+pyOpenSSL
