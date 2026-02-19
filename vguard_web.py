@@ -193,4 +193,6 @@ with tabs[4]:
     st.markdown('<div class="bubble">', unsafe_allow_html=True)
     st.header("💬 Connect with V-Guard")
     st.write("24/7 Professional Emergency Response.")
-    st.link_button("Chat on WhatsApp 💬", f"https://wa.me/{MY
+    st.link_button("Chat on WhatsApp 💬", f"https://wa.me/{MY_WHATSAPP}", type="primary")
+    st.write(f"Direct Email: {MY_EMAIL}")
+    st.markdown('</div>', unsafe_allow_html=True)
