@@ -2,3 +2,4 @@ streamlit
 dnspython
 requests
 reportlab
+pandas
