@@ -3,3 +3,4 @@ dnspython
 requests
 reportlab
 pandas
+python-whois
