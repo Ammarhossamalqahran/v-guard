@@ -208,3 +208,55 @@ with tabs[2]:
     st.write("- Enable multi-factor authentication everywhere.")
     st.write("- Train employees on cybersecurity awareness.")
     st.markdown('</div>', unsafe_allow_html=True)
+
+# ================= 4. PASS LAB =================
+with tabs[3]:
+    st.markdown('<div class="bubble">', unsafe_allow_html=True)
+    st.header("🔑 Advanced Password Intelligence")
+    pwd = st.text_input("Test Password Entropy", type="password")
+    if pwd:
+        has_upper = any(c.isupper() for c in pwd)
+        has_num = any(c.isdigit() for c in pwd)
+        has_sym = bool(re.search(r"[!@#$%^&*]", pwd))
+        length_ok = len(pwd) >= 12
+        p_score = sum([has_upper, has_num, has_sym, length_ok]) * 25
+
+        st.progress(p_score / 100)
+        st.write(f"**Entropy Strength:** {p_score}%")
+
+        col_a, col_b, col_c, col_d = st.columns(4)
+        col_a.write("Uppercase: " + ("✅" if has_upper else "❌"))
+        col_b.write("Numbers: " + ("✅" if has_num else "❌"))
+        col_c.write("Symbols: " + ("✅" if has_sym else "❌"))
+        col_d.write("Length ≥ 12: " + ("✅" if length_ok else "❌"))
+
+        # نصائح إضافية
+        st.markdown("### 🔒 Recommendations")
+        if p_score < 50:
+            st.error("Weak password! Consider adding uppercase, numbers, symbols, and making it longer.")
+        elif p_score < 75:
+            st.warning("Medium strength. Add more complexity for better protection.")
+        else:
+            st.success("Strong password! Good job.")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ================= 5. DARK WEB =================
+with tabs[4]:
+    st.markdown('<div class="bubble">', unsafe_allow_html=True)
+    st.header("🕵️ Dark Web Intelligence")
+    st.info("Checking leaked credentials & breaches...")
+    email_check = st.text_input("Enter Email to Check Breaches")
+    if email_check:
+        st.warning("⚠️ Demo Mode: Connect to HaveIBeenPwned API for real results.")
+        st.write(f"Results for {email_check}: Potential leaks found in demo mode.")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ================= 6. CONTACT =================
+with tabs[5]:
+    st.markdown('<div class="bubble">', unsafe_allow_html=True)
+    st.header("💬 Connect with V-Guard")
+    st.write("24/7 Professional Emergency Response.")
+    st.link_button("Chat on WhatsApp 💬", f"https://wa.me/{MY_WHATSAPP}", type="primary")
+    st.write(f"📧 Direct Email: {MY_EMAIL}")
+    st.write("🌐 Website: Coming Soon")
+    st.markdown('</div>', unsafe_allow_html=True)
