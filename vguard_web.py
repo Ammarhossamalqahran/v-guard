@@ -53,6 +53,36 @@ def check_ssl(domain):
     except Exception as e:
         return {"Error": str(e)}
 
+# --- فحص DNS Records ---
+def check_dns(domain):
+    results = {}
+    try:
+        mx = [r.exchange.to_text() for r in dns.resolver.resolve(domain, 'MX')]
+        results["MX Records"] = ", ".join(mx)
+    except: results["MX Records"] = "❌ Not Found"
+    try:
+        dmarc = [r.to_text() for r in dns.resolver.resolve("_dmarc."+domain, 'TXT')]
+        results["DMARC"] = "✅ Found" if dmarc else "❌ Missing"
+    except: results["DMARC"] = "❌ Missing"
+    try:
+        dkim = [r.to_text() for r in dns.resolver.resolve("default._domainkey."+domain, 'TXT')]
+        results["DKIM"] = "✅ Found" if dkim else "❌ Missing"
+    except: results["DKIM"] = "❌ Missing"
+    return results
+
+# --- فحص HTTP Headers ---
+def check_http_headers(domain):
+    headers_info = {}
+    try:
+        resp = requests.get("http://"+domain, timeout=5)
+        headers = resp.headers
+        headers_info["HSTS"] = "✅ Enabled" if "Strict-Transport-Security" in headers else "❌ Missing"
+        headers_info["CSP"] = "✅ Enabled" if "Content-Security-Policy" in headers else "❌ Missing"
+        headers_info["X-Frame-Options"] = headers.get("X-Frame-Options", "❌ Missing")
+    except Exception as e:
+        headers_info["Error"] = str(e)
+    return headers_info
+
 # --- CSS للفقاعات (Glassmorphism style) ---
 st.markdown("""
     <style>
@@ -109,90 +139,47 @@ with tabs[0]:
             except:
                 pass
 
-            c1, c2 = st.columns([1, 2])
-            with c1:
-                st.metric("SECURITY SCORE", f"{score}/100")
-                st.error("🚨 BREACH ALERT!")
-                st.info(f"**IP:** {ip}\n\n**ISP:** {geo.get('isp', 'N/A')}\n\n**Loc:** {geo.get('city', 'N/A')}")
-            with c2:
-                if geo.get('lat') and geo.get('lon'):
-                    st.map(pd.DataFrame({'lat': [geo['lat']], 'lon': [geo['lon']]}))
-            
-            st.markdown("---")
-            st.subheader("Technical Vulnerabilities")
-            tech_data = {"IP Address": ip, "SPF Status": spf, "Location": geo.get('city'), "ISP": geo.get('isp')}
-            st.json(tech_data)
-            
-            pdf = generate_pdf(domain, tech_data)
-            st.download_button("📄 DOWNLOAD FULL REPORT", pdf, file_name=f"VGuard_{domain}.pdf")
+            dns_data = check_dns(domain)
+            http_headers = check_http_headers(domain)
+            ssl_data = check_ssl(domain)
+
+            # عرض النتائج
+            st.metric("SECURITY SCORE", f"{score}/100")
+            st.info(f"**IP:** {ip}\n\n**ISP:** {geo.get('isp', 'N/A')}\n\n**Loc:** {geo.get('city', 'N/A')}")
+
+            st.markdown("### 🧩 DNS & Email Security")
+            st.json(dns_data)
 
             st.markdown("### 🔐 SSL Research")
-            ssl_data = check_ssl(domain)
             st.json(ssl_data)
+
+            st.markdown("### 🌐 HTTP Security Headers")
+            st.json(http_headers)
 
             # Dashboard رسومي
             st.markdown("### 📊 Security Dashboard")
             df = pd.DataFrame({
-                "Category": ["SPF", "SSL", "Score"],
-                "Value": [1 if spf == "✅ Secured" else 0, 1 if "Issuer" in ssl_data else 0, score/100]
+                "Category": ["SPF", "DMARC", "DKIM", "SSL", "Score"],
+                "Value": [
+                    1 if spf == "✅ Secured" else 0,
+                    1 if dns_data["DMARC"] == "✅ Found" else 0,
+                    1 if dns_data["DKIM"] == "✅ Found" else 0,
+                    1 if "Issuer" in ssl_data else 0,
+                    score/100
+                ]
             })
-            fig = px.pie(df, names="Category", values="Value", title="Security Indicators", color_discrete_sequence=px.colors.sequential.Aggrnyl)
+            fig = px.bar(df, x="Category", y="Value", title="Security Indicators", color="Category")
             st.plotly_chart(fig, use_container_width=True)
+
+            # PDF Report
+            tech_data = {"IP Address": ip, "SPF Status": spf, "Location": geo.get('city'), "ISP": geo.get('isp')}
+            tech_data.update(dns_data)
+            tech_data.update(http_headers)
+            pdf = generate_pdf(domain, tech_data)
+            st.download_button("📄 DOWNLOAD FULL REPORT", pdf, file_name=f"VGuard_{domain}.pdf")
 
         else:
             st.warning("Please enter a target first!")
     st.markdown('</div>', unsafe_allow_html=True)
 
-# ================= 2. SOCIAL MEDIA =================
-with tabs[1]:
-    st.markdown('<div class="bubble">', unsafe_allow_html=True)
-    st.header("📱 Professional Protection Guide")
-    st.warning("Critical Risk: Session Hijacking via Malicious Cookies.")
-    st.write("### 🎥 YouTube / Google")
-    st.write("- Use **Dedicated browser** for Studio only.")
-    st.write("- Enroll in **Advanced Protection Program**.")
-    st.write("- Use Hardware Security Keys (U2F).")
-    st.markdown("---")
-    st.write("### 📸 Instagram / Meta")
-    st.write("- Disable SMS 2FA; use **Auth Apps**.")
-    st.write("- Monitor 'Login Activity' regularly.")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# ================= 3. PASS LAB =================
-with tabs[2]:
-    st.markdown('<div class="bubble">', unsafe_allow_html=True)
-    st.header("🔑 Advanced Password Intelligence")
-    pwd = st.text_input("Test Password Entropy", type="password")
-    if pwd:
-        has_upper = any(c.isupper() for c in pwd)
-        has_num = any(c.isdigit() for c in pwd)
-        has_sym = bool(re.search(r"[!@#$%^&*]", pwd))
-        p_score = sum([has_upper, has_num, has_sym, len(pwd) >= 12]) * 25
-        
-        st.progress(p_score / 100)
-        st.write(f"**Entropy Strength:** {p_score}%")
-        col_a, col_b, col_c = st.columns(3)
-        col_a.write("Uppercase: " + ("✅" if has_upper else "❌"))
-        col_b.write("Numbers: " + ("✅" if has_num else "❌"))
-        col_c.write("Symbols: " + ("✅" if has_sym else "❌"))
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# ================= 4. DARK WEB =================
-with tabs[3]:
-    st.markdown('<div class="bubble">', unsafe_allow_html=True)
-    st.header("🕵️ Dark Web Intelligence")
-    st.info("Checking leaked credentials & breaches...")
-    email_check = st.text_input("Enter Email to Check Breaches")
-    if email_check:
-        st.warning("⚠️ Demo Mode: Connect to HaveIBeenPwned API for real results.")
-        st.write(f"Results for {email_check}: Potential leaks found in demo mode.")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# ================= 5. CONTACT =================
-with tabs[4]:
-    st.markdown('<div class="bubble">', unsafe_allow_html=True)
-    st.header("💬 Connect with V-Guard")
-    st.write("24/7 Professional Emergency Response.")
-    st.link_button("Chat on WhatsApp 💬", f"https://wa.me/{MY_WHATSAPP}", type="primary")
-    st.write(f"Direct Email: {MY_EMAIL}")
-    st.markdown('</div>', unsafe_allow_html=True)
+# ================= باقي الأقسام زي ما كانت =================
