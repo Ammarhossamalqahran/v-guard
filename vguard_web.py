@@ -8,6 +8,7 @@ import re
 import pandas as pd
 import ssl
 import OpenSSL
+import plotly.express as px
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from urllib.parse import urlparse
@@ -52,12 +53,33 @@ def check_ssl(domain):
     except Exception as e:
         return {"Error": str(e)}
 
+# --- CSS للفقاعات ---
+st.markdown("""
+    <style>
+    .bubble {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 20px;
+        margin: 15px 0;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        transition: 0.3s;
+    }
+    .bubble:hover {
+        background: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 0 20px #4CAF50;
+        transform: scale(1.02);
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # --- واجهة المستخدم ---
 st.title("🛡️ V-GUARD INTELLIGENCE SYSTEM")
 tabs = st.tabs(["🔍 Intelligence Hub", "📱 Social Media", "🔑 Pass Lab", "🕵️ Dark Web", "💬 Contact"])
 
 # ================= 1. INTELLIGENCE HUB =================
 with tabs[0]:
+    st.markdown('<div class="bubble">', unsafe_allow_html=True)
     st.subheader("Deep Infrastructure Reconnaissance")
     target = st.text_input("Enter Target Domain/Email", placeholder="example.com", key="main_input")
     
@@ -105,11 +127,22 @@ with tabs[0]:
             ssl_data = check_ssl(domain)
             st.json(ssl_data)
 
+            # Dashboard رسومي
+            st.markdown("### 📊 Security Dashboard")
+            df = pd.DataFrame({
+                "Category": ["SPF", "SSL", "Score"],
+                "Value": [1 if spf == "✅ Secured" else 0, 1 if "Issuer" in ssl_data else 0, score/100]
+            })
+            fig = px.pie(df, names="Category", values="Value", title="Security Indicators")
+            st.plotly_chart(fig, use_container_width=True)
+
         else:
             st.warning("Please enter a target first!")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ================= 2. SOCIAL MEDIA =================
 with tabs[1]:
+    st.markdown('<div class="bubble">', unsafe_allow_html=True)
     st.header("📱 Professional Protection Guide")
     st.warning("Critical Risk: Session Hijacking via Malicious Cookies.")
     st.write("### 🎥 YouTube / Google")
@@ -120,9 +153,11 @@ with tabs[1]:
     st.write("### 📸 Instagram / Meta")
     st.write("- Disable SMS 2FA; use **Auth Apps**.")
     st.write("- Monitor 'Login Activity' regularly.")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ================= 3. PASS LAB =================
 with tabs[2]:
+    st.markdown('<div class="bubble">', unsafe_allow_html=True)
     st.header("🔑 Advanced Password Intelligence")
     pwd = st.text_input("Test Password Entropy", type="password")
     if pwd:
@@ -137,19 +172,24 @@ with tabs[2]:
         col_a.write("Uppercase: " + ("✅" if has_upper else "❌"))
         col_b.write("Numbers: " + ("✅" if has_num else "❌"))
         col_c.write("Symbols: " + ("✅" if has_sym else "❌"))
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ================= 4. DARK WEB =================
 with tabs[3]:
+    st.markdown('<div class="bubble">', unsafe_allow_html=True)
     st.header("🕵️ Dark Web Intelligence")
     st.info("Checking leaked credentials & breaches...")
     email_check = st.text_input("Enter Email to Check Breaches")
     if email_check:
         st.warning("⚠️ Demo Mode: Connect to HaveIBeenPwned API for real results.")
         st.write(f"Results for {email_check}: Potential leaks found in demo mode.")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ================= 5. CONTACT =================
 with tabs[4]:
+    st.markdown('<div class="bubble">', unsafe_allow_html=True)
     st.header("💬 Connect with V-Guard")
     st.write("24/7 Professional Emergency Response.")
     st.link_button("Chat on WhatsApp 💬", f"https://wa.me/{MY_WHATSAPP}", type="primary")
     st.write(f"Direct Email: {MY_EMAIL}")
+    st.markdown('</div>', unsafe_allow_html=True)
