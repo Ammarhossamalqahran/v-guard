@@ -83,7 +83,7 @@ def check_http_headers(domain):
         headers_info["Error"] = str(e)
     return headers_info
 
-# --- CSS للفقاعات (Glassmorphism style) ---
+# --- CSS للفقاعات ---
 st.markdown("""
     <style>
     body {
@@ -108,7 +108,7 @@ st.markdown("""
 
 # --- واجهة المستخدم ---
 st.title("🛡️ V-GUARD INTELLIGENCE SYSTEM")
-tabs = st.tabs(["🔍 Intelligence Hub", "📱 Social Media", "🔑 Pass Lab", "🕵️ Dark Web", "💬 Contact"])
+tabs = st.tabs(["🔍 Intelligence Hub", "📱 Social Media", "🛡️ Cybersecurity Awareness", "🔑 Pass Lab", "🕵️ Dark Web", "💬 Contact"])
 
 # ================= 1. INTELLIGENCE HUB =================
 with tabs[0]:
@@ -143,7 +143,6 @@ with tabs[0]:
             http_headers = check_http_headers(domain)
             ssl_data = check_ssl(domain)
 
-            # عرض النتائج
             st.metric("SECURITY SCORE", f"{score}/100")
             st.info(f"**IP:** {ip}\n\n**ISP:** {geo.get('isp', 'N/A')}\n\n**Loc:** {geo.get('city', 'N/A')}")
 
@@ -156,7 +155,6 @@ with tabs[0]:
             st.markdown("### 🌐 HTTP Security Headers")
             st.json(http_headers)
 
-            # Dashboard رسومي
             st.markdown("### 📊 Security Dashboard")
             df = pd.DataFrame({
                 "Category": ["SPF", "DMARC", "DKIM", "SSL", "Score"],
@@ -171,7 +169,6 @@ with tabs[0]:
             fig = px.bar(df, x="Category", y="Value", title="Security Indicators", color="Category")
             st.plotly_chart(fig, use_container_width=True)
 
-            # PDF Report
             tech_data = {"IP Address": ip, "SPF Status": spf, "Location": geo.get('city'), "ISP": geo.get('isp')}
             tech_data.update(dns_data)
             tech_data.update(http_headers)
@@ -182,4 +179,21 @@ with tabs[0]:
             st.warning("Please enter a target first!")
     st.markdown('</div>', unsafe_allow_html=True)
 
-# ================= باقي الأقسام زي ما كانت =================
+# ================= 2. SOCIAL MEDIA =================
+with tabs[1]:
+    st.markdown('<div class="bubble">', unsafe_allow_html=True)
+    st.header("📱 Social Media Security")
+    st.write("### 🎥 YouTube / Google")
+    st.write("- Use **Dedicated browser** for Studio only.")
+    st.write("- Enroll in **Advanced Protection Program**.")
+    st.write("- Use Hardware Security Keys (U2F).")
+    st.markdown("---")
+    st.write("### 📸 Instagram / Meta")
+    st.write("- Disable SMS 2FA; use **Auth Apps**.")
+    st.write("- Monitor 'Login Activity' regularly.")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ================= 3. CYBERSECURITY AWARENESS =================
+with tabs[2]:
+    st.markdown('<div class="bubble">', unsafe_allow_html=True)
+    st.header("🛡️ Cybersecurity Awareness
