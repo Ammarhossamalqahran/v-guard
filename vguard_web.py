@@ -195,5 +195,16 @@ with tabs[1]:
 
 # ================= 3. CYBERSECURITY AWARENESS =================
 with tabs[2]:
-    st.markdown('<div class="bubble">
-                
+    st.markdown('<div class="bubble">', unsafe_allow_html=True)
+    st.header("🛡️ Cybersecurity Awareness")
+    st.write("### Common Threats")
+    st.write("- Phishing attacks via email and SMS.")
+    st.write("- Ransomware targeting businesses.")
+    st.write("- Social engineering and identity theft.")
+    st.markdown("---")
+    st.write("### Best Practices")
+    st.write("- Always update your software and systems.")
+    st.write("- Use strong, unique passwords with a password manager.")
+    st.write("- Enable multi-factor authentication everywhere.")
+    st.write("- Train employees on cybersecurity awareness.")
+    st.markdown('</div>', unsafe_allow_html=True)
