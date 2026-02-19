@@ -26,14 +26,42 @@ def generate_pdf(domain, data):
     c.line(50, 720, 550, 720)
     y = 680
     for k, v in data.items():
+        if y < 100:  # لو قربنا من نهاية الصفحة
+            c.showPage()
+            y = 750
         c.drawString(70, y, f"• {k}: {v}")
         y -= 25
     c.save()
     buffer.seek(0)
     return buffer
 
+# --- CSS للبابلز ---
+st.markdown("""
+    <style>
+    .bubble {
+        display: inline-block;
+        padding: 20px;
+        margin: 10px;
+        border-radius: 50%;
+        background: #1f77b4;
+        color: white;
+        text-align: center;
+        transition: 0.3s;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        font-weight: bold;
+    }
+    .bubble:hover {
+        background: #ff7f0e;
+        box-shadow: 0 0 20px #ff7f0e;
+        transform: scale(1.1);
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # --- واجهة المستخدم ---
 st.title("🛡️ V-GUARD INTELLIGENCE SYSTEM")
+
 tabs = st.tabs(["🔍 Intelligence Hub", "📱 Social Media", "🔑 Pass Lab", "💬 Contact"])
 
 # ================= 1. INTELLIGENCE HUB =================
@@ -43,11 +71,19 @@ with tabs[0]:
     
     if st.button("EXECUTE SCAN 🚀", type="primary"):
         if target:
-            domain = urlparse(target).netloc if "://" in target else target.split("@")[-1] if "@" in target else target
+            # استخراج الدومين بشكل آمن
+            if "@" in target:
+                domain = target.split("@")[-1]
+            else:
+                parsed = urlparse(target)
+                domain = parsed.netloc if parsed.netloc else parsed.path
+
             try:
                 ip = socket.gethostbyname(domain)
                 geo = requests.get(f"http://ip-api.com/json/{ip}", timeout=5).json()
-            except: geo = {}; ip = "0.0.0.0"
+            except:
+                geo = {}
+                ip = "0.0.0.0"
 
             # فحص تقني
             score = 20
@@ -55,7 +91,8 @@ with tabs[0]:
             try:
                 if any("v=spf1" in r.to_text() for r in dns.resolver.resolve(domain, 'TXT')):
                     spf = "✅ Secured"; score += 40
-            except: pass
+            except:
+                pass
 
             # العرض
             c1, c2 = st.columns([1, 2])
@@ -64,7 +101,7 @@ with tabs[0]:
                 st.error("🚨 BREACH ALERT!")
                 st.info(f"**IP:** {ip}\n\n**ISP:** {geo.get('isp', 'N/A')}\n\n**Loc:** {geo.get('city', 'N/A')}")
             with c2:
-                if geo.get('lat'):
+                if geo.get('lat') and geo.get('lon'):
                     st.map(pd.DataFrame({'lat': [geo['lat']], 'lon': [geo['lon']]}))
             
             st.markdown("---")
@@ -90,7 +127,7 @@ with tabs[1]:
     st.write("- Disable SMS 2FA; use **Auth Apps**.")
     st.write("- Monitor 'Login Activity' regularly.")
 
-# ================= 3. PASS LAB (النسخة الذكية) =================
+# ================= 3. PASS LAB =================
 with tabs[2]:
     st.header("🔑 Advanced Password Intelligence")
     pwd = st.text_input("Test Password Entropy", type="password")
